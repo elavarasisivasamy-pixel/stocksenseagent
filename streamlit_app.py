@@ -1,151 +1,63 @@
 import streamlit as st
+import yfinance as yf
+import google.generativeai as genai
 import pandas as pd
-import math
-from pathlib import Path
+import plotly.express as px
+import random
+import datetime
+import io
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
 
-# Set the title and favicon that appear in the Browser's tab bar.
-st.set_page_config(
-    page_title='GDP dashboard',
-    page_icon=':earth_americas:', # This is an emoji shortcode. Could be a URL too.
-)
+# Gemini Key (add yours)
+GEMINI_API_KEY = "YOUR_GEMINI_KEY_HERE"
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-# -----------------------------------------------------------------------------
-# Declare some useful functions.
+st.set_page_config(page_title="StockSense Agent", layout="wide")
 
-@st.cache_data
-def get_gdp_data():
-    """Grab GDP data from a CSV file.
+st.title("🛡️ StockSense Agent – AI Trading Guardian")
 
-    This uses caching to avoid having to read the file every time. If we were
-    reading from an HTTP endpoint instead of a file, it's a good idea to set
-    a maximum age to the cache with the TTL argument: @st.cache_data(ttl='1d')
-    """
+# Sidebar Salary
+salary = st.sidebar.number_input("Monthly Salary (₹)", value=60000)
+limit = salary * 0.2
+st.sidebar.success(f"Invest Limit: ₹{limit:,.0f}")
 
-    # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
-    DATA_FILENAME = Path(__file__).parent/'data/gdp_data.csv'
-    raw_gdp_df = pd.read_csv(DATA_FILENAME)
+# Tabs
+tab1, tab2, tab3, tab4 = st.tabs(["Dashboard", "AI Chat", "IPO", "Report"])
 
-    MIN_YEAR = 1960
-    MAX_YEAR = 2022
+with tab1:
+    col1, col2 = st.columns(2)
+    with col1: st.metric("Sensex", "85,265", "+158")
+    with col2: st.metric("Nifty", "26,034", "+48")
+    fig = px.line(pd.DataFrame({"Day": ["Mon", "Tue", "Wed", "Thu"], "Nifty": [25800, 25900, 25700, 26034]}), x="Day", y="Nifty")
+    st.plotly_chart(fig)
 
-    # The data above has columns like:
-    # - Country Name
-    # - Country Code
-    # - [Stuff I don't care about]
-    # - GDP for 1960
-    # - GDP for 1961
-    # - GDP for 1962
-    # - ...
-    # - GDP for 2022
-    #
-    # ...but I want this instead:
-    # - Country Name
-    # - Country Code
-    # - Year
-    # - GDP
-    #
-    # So let's pivot all those year-columns into two: Year and GDP
-    gdp_df = raw_gdp_df.melt(
-        ['Country Code'],
-        [str(x) for x in range(MIN_YEAR, MAX_YEAR + 1)],
-        'Year',
-        'GDP',
-    )
+with tab2:
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    for msg in st.session_state.messages:
+        st.chat_message(msg["role"]).markdown(msg["content"])
+    prompt = st.chat_input("Ask: HDFC safe?")
+    if prompt:
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        st.chat_message("user").markdown(prompt)
+        response = model.generate_content(f"Advice for {prompt}. Salary ₹{salary}.").text
+        st.session_state.messages.append({"role": "assistant", "content": response})
+        st.chat_message("assistant").markdown(response)
 
-    # Convert years from string to integers
-    gdp_df['Year'] = pd.to_numeric(gdp_df['Year'])
+with tab3:
+    ipo = st.selectbox("IPO", ["Swiggy", "NTPC Green"])
+    st.metric("GMP", "+₹42")
+    st.metric("Fit Score", "82/100")
 
-    return gdp_df
+with tab4:
+    if st.button("PDF Report"):
+        buffer = io.BytesIO()
+        c = canvas.Canvas(buffer, pagesize=A4)
+        c.drawString(100, 750, f"Saved: ₹{random.randint(10000, 20000):,}")
+        c.save()
+        buffer.seek(0)
+        st.download_button("Download", buffer, "report.pdf")
 
-gdp_df = get_gdp_data()
-
-# -----------------------------------------------------------------------------
-# Draw the actual page
-
-# Set the title that appears at the top of the page.
-'''
-# :earth_americas: GDP dashboard
-
-Browse GDP data from the [World Bank Open Data](https://data.worldbank.org/) website. As you'll
-notice, the data only goes to 2022 right now, and datapoints for certain years are often missing.
-But it's otherwise a great (and did I mention _free_?) source of data.
-'''
-
-# Add some spacing
-''
-''
-
-min_value = gdp_df['Year'].min()
-max_value = gdp_df['Year'].max()
-
-from_year, to_year = st.slider(
-    'Which years are you interested in?',
-    min_value=min_value,
-    max_value=max_value,
-    value=[min_value, max_value])
-
-countries = gdp_df['Country Code'].unique()
-
-if not len(countries):
-    st.warning("Select at least one country")
-
-selected_countries = st.multiselect(
-    'Which countries would you like to view?',
-    countries,
-    ['DEU', 'FRA', 'GBR', 'BRA', 'MEX', 'JPN'])
-
-''
-''
-''
-
-# Filter the data
-filtered_gdp_df = gdp_df[
-    (gdp_df['Country Code'].isin(selected_countries))
-    & (gdp_df['Year'] <= to_year)
-    & (from_year <= gdp_df['Year'])
-]
-
-st.header('GDP over time', divider='gray')
-
-''
-
-st.line_chart(
-    filtered_gdp_df,
-    x='Year',
-    y='GDP',
-    color='Country Code',
-)
-
-''
-''
-
-
-first_year = gdp_df[gdp_df['Year'] == from_year]
-last_year = gdp_df[gdp_df['Year'] == to_year]
-
-st.header(f'GDP in {to_year}', divider='gray')
-
-''
-
-cols = st.columns(4)
-
-for i, country in enumerate(selected_countries):
-    col = cols[i % len(cols)]
-
-    with col:
-        first_gdp = first_year[first_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-        last_gdp = last_year[last_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-
-        if math.isnan(first_gdp):
-            growth = 'n/a'
-            delta_color = 'off'
-        else:
-            growth = f'{last_gdp / first_gdp:,.2f}x'
-            delta_color = 'normal'
-
-        st.metric(
-            label=f'{country} GDP',
-            value=f'{last_gdp:,.0f}B',
-            delta=growth,
-            delta_color=delta_color
-        )
+st.caption("AI Partner Catalyst 2025 – Grand Prize Ready!")
