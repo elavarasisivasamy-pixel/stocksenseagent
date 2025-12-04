@@ -59,5 +59,3 @@ with tab4:
         c.save()
         buffer.seek(0)
         st.download_button("Download", buffer, "report.pdf")
-
-st.caption("AI Partner Catalyst 2025 – Grand Prize Ready!")
