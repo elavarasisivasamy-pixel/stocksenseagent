@@ -10,7 +10,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 
 # Gemini Key (add yours)
-GEMINI_API_KEY = "YOUR_GEMINI_KEY_HERE"
+GEMINI_API_KEY = "AIzaSyA8YnbwSGh8VNL4g72KsZTBuUOG80jZ-Sw"
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
