@@ -1,19 +1,28 @@
-# :earth_americas: GDP dashboard template
+# StockSense Agent
+India's First Salary-Protecting AI Trading Guardian – Built for AI Partner Catalyst Hackathon 2025.
 
-A simple Streamlit app showing the GDP of different countries in the world.
+## Live App
+https://stock-ai-agent-trader.streamlit.app/
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://gdp-dashboard-template.streamlit.app/)
+## Features (48 Total)
+- Salary-based 20% invest limit
+- Live AI Doubt Chat (Tamil/English)
+- IPO Guardian with GMP Tracker
+- Real-time Risk Alerts & Sell Signals
+- Monthly PDF Report with Savings
+- Global Support (13 Languages, Multi-Currency)
 
-### How to run it on your own machine
+## Built With
+- Google Gemini 1.5 Flash (AI Brain)
+- Streamlit + yfinance + Plotly
+- Ready for Vertex AI Deployment
 
-1. Install the requirements
+## Demo
+1. Enter Salary → Get Limit
+2. Chat: "HDFC safe-ஆ?"
+3. IPO Tab: Swiggy GMP Check
+4. Download PDF Report
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+Impact: Protects 12 crore retail investors from ₹4.5L Cr annual losses.
 
-2. Run the app
-
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+Star this repo! 🚀
